@@ -41,14 +41,15 @@ class pi_heater_t:
                 crc = crc[1].replace('\n', '')
                 if crc=='YES':
                     line = f.readline()
-                    temp = int(line.rsplit('t=',1)[1]) / 1000.0
-                    print(sensor, ":", temp, "°C")
+                    raw = line.rsplit('t=',1)[1].strip()
+                    temp = int(raw) / 1000.0
+                    print(sensor, ":", temp, "degrees")
                     return temp
                 else:
                     print(sensor, "CRC failed")
                     return None
-        except:
-            print("Failed to read", sensor)
+        except Exception as e:
+            print("Failed to read", sensor, str(e))
             return None
 
 
