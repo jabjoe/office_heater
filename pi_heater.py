@@ -19,11 +19,10 @@ class pi_heater_t:
         self.client = paho.Client("pi-heater-control")
         self.client.tls_set()
         self.client.username_pw_set(username, password)
-        self.client.connect(hostname, port)
-        self.client.on_message = lambda c, u, m : self._on_message(u, m)
-
-        self.client.publish(current_state, "off")
-        self.client.subscribe(next_state)
+        self.hostname = hostname
+        self.port = port
+        self._connected = False
+        self._connect()
 
         self.state = False
         self.sensors = []
@@ -31,6 +30,20 @@ class pi_heater_t:
         for f in os.listdir("/sys/bus/w1/devices/"):
             if f.find("bus_master") == -1:
                 self.sensors += [ os.path.join("/sys/bus/w1/devices/", f) ]
+
+    def _connect(self):
+        try:
+            self.client.connect(self.hostname, self.port)
+            self.client.on_message = lambda c, u, m : self._on_message(u, m)
+
+            self.client.publish(current_state, "off")
+            self.client.subscribe(next_state)
+            self.client.on_disconnect = lambda client, userdata, rc : self._connect()
+            self._connected = True
+            print("Connected")
+        except Exception as e:
+            print("Failed to connect : %s" % str(e))
+            self._connected = False
 
 
     def _read_sensor(self, sensor):
@@ -75,8 +88,11 @@ class pi_heater_t:
                 self._update_others()
 
     def loop(self):
-        self.client.loop()
-        self._update_others()
+        if self._connected:
+            self.client.loop()
+            self._update_others()
+        else:
+            self._connect()
 
     def finish(self):
         self.client.disconnect()
