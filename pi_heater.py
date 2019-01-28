@@ -6,6 +6,7 @@ import time
 import paho.mqtt.client as paho
 import energenie
 
+_debug = False
 
 
 current_state = "office/pi_heater/state"
@@ -56,7 +57,8 @@ class pi_heater_t:
                     line = f.readline()
                     raw = line.rsplit('t=',1)[1].strip()
                     temp = int(raw) / 1000.0
-                    #print(sensor, ":", temp, "degrees")
+                    if _debug:
+                        print(sensor, ":", temp, "degrees")
                     return temp
                 else:
                     print(sensor, "CRC failed")
